@@ -4,7 +4,6 @@ const bodyparser = require('body-parser');
 const cors = require('cors');
 const department_controller = require('./department_controller');
 const product_controller = require('./product_controller');
-
 const app = express();
 
 app.use(bodyparser.json());

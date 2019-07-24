@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ProductService } from '../_services/Product.service';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, NgForm } from '@angular/forms';
 import { Product } from '../_model/Product';
 import { DepartmentService } from '../_services/Department.service';
 import { Department } from '../_model/Department';
 import { Subject } from 'rxjs';
 import { takeUntil, tap } from 'rxjs/operators';
+import { MatSnackBar } from '@angular/material';
 
 @Component({
   selector: "app-Product",
@@ -16,10 +17,12 @@ export class ProductComponent implements OnInit {
   productForm: FormGroup = this.fb.group({
     _id: [null],
     name: ['', [Validators.required]],
-    stock: [0, [Validators.required]],
-    price: [0, [Validators.required]],
+    stock: [0, [Validators.required, Validators.min(0)]],
+    price: [0, [Validators.required, Validators.min(0)]],
     departments: [[], [Validators.required]]
   });
+
+  @ViewChild('form') form: NgForm;
 
   private unsubscribe$: Subject<any> = new Subject<any>();
 
@@ -29,20 +32,19 @@ export class ProductComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private fb: FormBuilder,
-    private deptosService: DepartmentService
+    private deptosService: DepartmentService,
+    private snackbar: MatSnackBar
   ) {}
 
   ngOnInit() {
     this.productService
       .getProducts()
       .pipe(takeUntil(this.unsubscribe$))
-      .subscribe((prods) => this.products = prods);
-    console.log(this.products);
+      .subscribe(prods => this.products = prods);
     this.deptosService
       .getDepartments()
       .pipe(takeUntil(this.unsubscribe$))
-      .subscribe(deptos => (this.departments = deptos));
-    console.log(this.departments);
+      .subscribe((deptos) => this.departments = deptos);
   }
 
   // tslint:disable-next-line: use-life-cycle-interface
@@ -54,13 +56,31 @@ export class ProductComponent implements OnInit {
     let data = this.productForm.value;
     if (data._id != null) {
       this.productService.updateProduct(data)
-        .subscribe();
+        .subscribe(() => this.notify('Updated!'));
     } else {
-      this.productService.addProduct(data).subscribe();
+      this.productService.addProduct(data).subscribe(() => this.notify('Inserted!'));
     }
+    this.resetForm();
   }
 
-  delete(prod: Product) {}
+  delete(prod: Product) {
+    this.productService.delProduct(prod)
+      .subscribe(
+        () => this.notify('Deleted'),
+        (err) => console.log(err)
+      );
+  }
 
-  edit(prod: Product) {}
+  edit(prod: Product) {
+    this.productForm.setValue(prod) ;
+  }
+
+  notify(s: string) {
+    this.snackbar.open(s, 'OK', {duration: 3000});
+  }
+
+  resetForm() {
+    // this.productForm.reset();
+    this.form.resetForm();
+  }
 }

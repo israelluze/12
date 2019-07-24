@@ -51,6 +51,7 @@ export class DepartmentComponent implements OnInit {
         }
       );
     }
+    this.clearFields();
   }
 
   clearFields() {
@@ -67,9 +68,7 @@ export class DepartmentComponent implements OnInit {
   delete(dep: Department) {
     this.departmentService.delDepartment(dep)
       .subscribe(() => this.notify('Removed!'),
-        (err) => {this.notify('Erro');
-                  console.error(err);
-        }
+        (err) => this.notify(err.error.msg)
       );
   }
 
